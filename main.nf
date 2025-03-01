@@ -1,11 +1,13 @@
 include { FETCH_METADATA } from './modules/fetch_metadata'
-include { FETCH_ASSEMBLIES } from './modules/download_data'
+include { DOWNLOAD_ASSEMBLIES } from './modules/download_data'
+  
+params.asm_accessions = "./metadata/xoo_assembly_ids.txt"
 
 workflow {
-    // FETCH_METADATA()
+    FETCH_METADATA()
     Channel
-      .fromPath("./metadata/xoo_assembly_ids.txt")
+      .fromPath(params.asm_accessions)
       .set { assembly_ids }
 
-    FETCH_ASSEMBLIES(assembly_ids, "xoo_assemblies")
+    DOWNLOAD_ASSEMBLIES(assembly_ids, "xoo_assemblies")
 }
