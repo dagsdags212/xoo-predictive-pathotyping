@@ -1,8 +1,5 @@
-
 process FETCH_XOO_ASSEMBLIES {
-
   container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
-
   publishDir 'metadata'
 
   output:
@@ -22,9 +19,7 @@ process FETCH_XOO_ASSEMBLIES {
 }
 
 process FETCH_XOO_READS_METADATA {
-
   container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
-
   publishDir 'metadata'
 
   output:
@@ -38,9 +33,7 @@ process FETCH_XOO_READS_METADATA {
 }
 
 process FILTER_SHORT_READS_FROM_METADATA {
-
   container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
-
   publishDir 'metadata'
 
   input:
@@ -61,9 +54,7 @@ process FILTER_SHORT_READS_FROM_METADATA {
 }
 
 process FILTER_LONG_READS_FROM_METADATA {
-
   container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
-
   publishDir 'metadata'
 
   input:
@@ -90,7 +81,7 @@ process EXTRACT_SHORT_READ_ACCESSIONS {
     path metadata_file
 
   output:
-    path "*.txt"
+    path "short_read_accessions.txt"
   
   script:
   """
@@ -105,27 +96,82 @@ process EXTRACT_LONG_READ_ACCESSIONS {
     path metadata_file
 
   output:
-    path "*.txt"
+    path "long_read_accessions.txt"
   
   script:
   """
   cat $metadata_file | cut -d, -f3 | tr ';' '\n' > long_read_accessions.txt
   """
 }
-workflow FETCH_METADATA {
-  // Retrieve a list of Xoo assemblies from NCBI.
-  FETCH_XOO_ASSEMBLIES()
 
+process PREFETCH_ASSEMBLIES {
+    container 'community.wave.seqera.io/library/ncbi-datasets-cli:16.43.0--33e650ab1b371eba'    
+    publishDir "data", mode: 'copy'
+
+    input:
+        path asm_accession_list
+        val filename
+    
+    output:
+        path "${filename}.zip"
+
+    script:
+    """
+    datasets download genome accession --inputfile ${asm_accession_list} \
+        --assembly-level complete --assembly-source all \
+        --filename ${filename}.zip --include genome,gff3 \
+        --dehydrated
+    """
+}
+
+process UNZIP_ASSEMBLY_URLS {
+    publishDir "data", mode: 'copy'
+
+    input:
+        path asm_dir
+
+    output:
+        path "assemblies"
+    
+    script:
+    """
+    unzip ${asm_dir} -d assemblies
+    """
+}
+
+process REHYDRATE_ASSEMBLIES {
+    container 'community.wave.seqera.io/library/ncbi-datasets-cli:16.43.0--33e650ab1b371eba'    
+    publishDir "data", mode: 'copy'
+
+    input:
+        path asm_dir
+
+    output:
+        path "${asm_dir}/ncbi_dataset/data/GC*"
+
+    script:
+    """
+    datasets rehydrate --directory ${asm_dir}
+    """
+}
+
+workflow FETCH_GENOMES {
+  // Retrieve all Xoo assemblies from NCBI.
+  asm_list = FETCH_XOO_ASSEMBLIES()
+  PREFETCH_ASSEMBLIES(asm_list, 'xoo_assemblies')
+    | UNZIP_ASSEMBLY_URLS
+    | REHYDRATE_ASSEMBLIES
+}
+
+workflow FETCH_READS {
   // Retrieve Xoo read metadata.
   metadata = FETCH_XOO_READS_METADATA()
 
-  // Filter metadata to only include short reads.
-  short_read_metadata = FILTER_SHORT_READS_FROM_METADATA(metadata)
+  // Filter short reads and extract accessions.
+  FILTER_SHORT_READS_FROM_METADATA(metadata)
+    | EXTRACT_SHORT_READ_ACCESSIONS
 
-  // Filter metadata to only include long reads.
-  long_read_metadata = FILTER_LONG_READS_FROM_METADATA(metadata)
-
-  // Extract read accession.
-  short_read_accessions = EXTRACT_SHORT_READ_ACCESSIONS(short_read_metadata)
-  long_read_accessions = EXTRACT_LONG_READ_ACCESSIONS(long_read_metadata)
+  // Filter long reads and extract accessions.
+  FILTER_LONG_READS_FROM_METADATA(metadata)
+    | EXTRACT_LONG_READ_ACCESSIONS
 }
