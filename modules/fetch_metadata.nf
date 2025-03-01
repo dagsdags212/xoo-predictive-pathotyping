@@ -1,7 +1,7 @@
 
 process FETCH_XOO_ASSEMBLIES {
 
-  container 'community.wave.seqera.io/library/entrez-direct_ncbi-datasets-cli:803ef2ef7c10175e'
+  container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
 
   publishDir 'metadata'
 
@@ -23,7 +23,7 @@ process FETCH_XOO_ASSEMBLIES {
 
 process FETCH_XOO_READS_METADATA {
 
-  container 'community.wave.seqera.io/library/entrez-direct_ncbi-datasets-cli:803ef2ef7c10175e'
+  container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
 
   publishDir 'metadata'
 
@@ -39,7 +39,7 @@ process FETCH_XOO_READS_METADATA {
 
 process FILTER_SHORT_READS_FROM_METADATA {
 
-  container 'community.wave.seqera.io/library/entrez-direct_ncbi-datasets-cli:803ef2ef7c10175e'
+  container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
 
   publishDir 'metadata'
 
@@ -62,7 +62,7 @@ process FILTER_SHORT_READS_FROM_METADATA {
 
 process FILTER_LONG_READS_FROM_METADATA {
 
-  container 'community.wave.seqera.io/library/entrez-direct_ncbi-datasets-cli:803ef2ef7c10175e'
+  container 'oras://community.wave.seqera.io/library/entrez-direct:22.4--13b1b2ab094decff'
 
   publishDir 'metadata'
 
@@ -112,27 +112,6 @@ process EXTRACT_LONG_READ_ACCESSIONS {
   cat $metadata_file | cut -d, -f3 | tr ';' '\n' > long_read_accessions.txt
   """
 }
-process DOWNLOAD_SHORT_READS {
-
-  container 'community.wave.seqera.io/library/sra-tools:3.2.0--7131354b4197d164'
-
-  publishDir 'data/reads/short'
-
-  input:
-    val acc
-
-  output:
-    path 'data/reads/short/${acc}.fastq'
-
-  script:
-  """
-  fastq-dump -F --split-file -O data/reads/short ${acc}
-  """
-}
-
-
-params.short_read_acc = "${projectDir}/metadata/short_read_accessions.txt"
-
 workflow FETCH_METADATA {
   // Retrieve a list of Xoo assemblies from NCBI.
   FETCH_XOO_ASSEMBLIES()
@@ -149,6 +128,4 @@ workflow FETCH_METADATA {
   // Extract read accession.
   short_read_accessions = EXTRACT_SHORT_READ_ACCESSIONS(short_read_metadata)
   long_read_accessions = EXTRACT_LONG_READ_ACCESSIONS(long_read_metadata)
-
-  short_read_accessions
 }
