@@ -1,0 +1,24 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  id: c412a951-5605-4b46-a006-3ee9902eefcc
+  title: SNP-based Prediction of Xoo Pathotype
+  subtitle: Training a machine learning model on GWAS data for disease characterization in rice
+  keywords: [xoo, bacterial-blight]
+  authors: 
+    - name: Jan Emmanuel G. Samson
+      email: jgsamson@up.edu.ph
+  github: https://github.com/dagsdags212/xoo-predictive-pathotyping
+
+  toc:
+    - file: index.md
+    - file: sections/00_proposal.md
+
+  exclude:
+    - '**/README*'
+
+site:
+  template: article-theme
+  # options:
+  #   favicon: favicon.ico
+  #   logo: site_logo.png
