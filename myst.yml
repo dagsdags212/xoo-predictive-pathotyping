@@ -11,14 +11,8 @@ project:
   github: https://github.com/dagsdags212/xoo-predictive-pathotyping
 
   toc:
-    - file: sections/00_proposal.md
-    #- file: index.md
-
-  exclude:
-    - '**/README*'
+    - file: sections/proposal.md
+    # - file: index.md
 
 site:
   template: article-theme
-  # options:
-  #   favicon: favicon.ico
-  #   logo: site_logo.png
